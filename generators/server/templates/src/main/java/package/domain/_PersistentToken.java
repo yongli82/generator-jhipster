@@ -1,13 +1,28 @@
+<%#
+ Copyright 2013-2017 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://jhipster.github.io/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
 package <%=packageName%>.domain;
 <% if (databaseType == 'cassandra') { %>
 import com.datastax.driver.mapping.annotations.*;<% } %>
-import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;<% if (hibernateCache != 'no' && databaseType == 'sql') { %>
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;<% } %>
-import java.time.LocalDate;<% if (databaseType == 'cassandra') { %>
-import java.time.ZonedDateTime;<% } %>
-import java.time.format.DateTimeFormatter;<% if (databaseType == 'mongodb') { %>
+import java.time.LocalDate;<% if (databaseType == 'mongodb') { %>
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;<% } %>
@@ -16,13 +31,12 @@ import org.springframework.data.mongodb.core.mapping.Document;<% } %>
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.io.Serializable;<% if (databaseType == 'cassandra') { %>
-import java.util.Date;
-import java.text.SimpleDateFormat;<% } %>
+import java.util.Date;<% } %>
 
 /**
  * Persistent tokens are used by Spring Security to automatically log in users.
  *
- * @see <%=packageName%>.security.CustomPersistentRememberMeServices
+ * @see <%=packageName%>.security.PersistentTokenRememberMeServices
  */<% if (databaseType == 'sql') { %>
 @Entity
 @Table(name = "jhi_persistent_token")<% } %><% if (hibernateCache != 'no' && databaseType == 'sql') { %>
@@ -32,14 +46,6 @@ import java.text.SimpleDateFormat;<% } %>
 public class PersistentToken implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    <%_ if (databaseType == 'sql' || databaseType == 'mongodb') { _%>
-
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("d MMMM yyyy");
-    <%_ } _%>
-    <%_ if (databaseType == 'cassandra') { _%>
-
-    private static final SimpleDateFormat DATE_TIME_FORMATTER = new SimpleDateFormat("d MMMM yyyy");
-    <%_ } _%>
 
     private static final int MAX_USER_AGENT_LEN = 255;
 <% if (databaseType == 'sql' || databaseType == 'mongodb')  { %>
@@ -52,8 +58,7 @@ public class PersistentToken implements Serializable {
     @Column(name = "token_value", nullable = false)<% } %><% if (databaseType == 'cassandra') { %>
     @Column(name = "token_value")<% } %>
     private String tokenValue;
-
-    @JsonIgnore<% if (databaseType == 'sql') { %>
+    <% if (databaseType == 'sql') { %>
     @Column(name = "token_date")
     private LocalDate tokenDate;<% } %><% if (databaseType == 'mongodb') { %>
     private LocalDate tokenDate;<% } %><% if (databaseType == 'cassandra') { %>
@@ -101,11 +106,6 @@ public class PersistentToken implements Serializable {
 
     public void setTokenDate(<% if (databaseType == 'sql' || databaseType == 'mongodb')  { %>LocalDate<% } %><% if (databaseType == 'cassandra') { %>Date<% } %> tokenDate) {
         this.tokenDate = tokenDate;
-    }
-
-    @JsonGetter
-    public String getFormattedTokenDate() {
-        <% if (databaseType == 'sql' || databaseType == 'mongodb')  { %>return DATE_TIME_FORMATTER.format(this.tokenDate);<% } %><% if (databaseType == 'cassandra') { %>return DATE_TIME_FORMATTER.format(this.tokenDate);<% } %>
     }
 
     public String getIpAddress() {

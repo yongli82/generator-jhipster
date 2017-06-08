@@ -4,24 +4,33 @@
     "baseName": "jhipsterSampleApplication",
     "packageName": "io.github.jhipster.sample",
     "packageFolder": "io/github/jhipster/sample",
-    "authenticationType": "session",
+    "authenticationType": "jwt",
     "hibernateCache": "ehcache",
-    "clusteredHttpSession": "no",
-    "websocket": "no",
+    "clusteredHttpSession": false,
+    "websocket": false,
     "databaseType": "sql",
     "devDatabaseType": "h2Disk",
     "prodDatabaseType": "mysql",
-    "searchEngine": "no",
+    "searchEngine": false,
     "useSass": false,
     "buildTool": "maven",
     "enableTranslation": true,
     "nativeLanguage": "en",
-    "languages": ["en", "fr"],
+    "languages": [
+      "en",
+      "fr"
+    ],
     "enableSocialSignIn": false,
     "rememberMeKey": "f19f0827c622eb9b81f5227a869ccd44932d78eb",
     "testFrameworks": [
       "gatling"
     ],
-    "travis": true
+    "serverPort": "8080",
+    "jhiPrefix": "jhi",
+    "travis": true,
+    "messageBroker": false,
+    "serviceDiscoveryType": false,
+    "clientPackageManager": "yarn",
+    "clientFramework": "angular2"
   }
 }

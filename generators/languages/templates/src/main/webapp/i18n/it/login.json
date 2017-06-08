@@ -1,15 +1,15 @@
 {
     "login": {
-        "title": "Accesso",
+        "title": "Accedi",
         "form": {
             "password": "Password",
-            "password.placeholder": "la password",
-            "rememberme": "Login automatico",
-            "button": "Login"
+            "password.placeholder": "La tua password",
+            "rememberme": "Ricordami",
+            "button": "Accedi"
         },
         "messages": {
             "error": {
-                "authentication": "<strong> Accesso non riuscito </ strong> controllare le credenziali e riprovare !."
+                "authentication": "<strong>Accesso non riuscito!</strong> Si prega di controllare le credenziali e riprovare."
             }
         },
         "password" : {

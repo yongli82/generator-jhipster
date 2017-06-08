@@ -1,31 +1,52 @@
+<%#
+ Copyright 2013-2017 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://jhipster.github.io/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
 package <%=packageName%>.domain;
 
 import <%=packageName%>.config.Constants;
 <% if (databaseType == 'cassandra') { %>
-import java.util.Date;
 import com.datastax.driver.mapping.annotations.*;<% } %>
-import com.fasterxml.jackson.annotation.JsonIgnore;<% if (hibernateCache != 'no' && databaseType == 'sql') { %>
+import com.fasterxml.jackson.annotation.JsonIgnore;<% if (databaseType == 'sql') { %>
+import org.hibernate.annotations.BatchSize;<% } %><% if (hibernateCache != 'no' && databaseType == 'sql') { %>
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;<% } %>
 import org.hibernate.validator.constraints.Email;
-<% if (searchEngine == 'elasticsearch') { %>
-import org.springframework.data.elasticsearch.annotations.Document;<% } %><% if (databaseType == 'mongodb') { %>
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
+<%_ if (searchEngine == 'elasticsearch') { _%>
+import org.springframework.data.elasticsearch.annotations.Document;
+<%_ } _%>
+<%_ if (databaseType == 'mongodb') { _%>
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-<% } %><% if (databaseType == 'sql') { %>
-import javax.persistence.*;<% } %>
+<%_ } _%>
+
+<%_ if (databaseType == 'sql') { _%>
+import javax.persistence.*;
+<%_ } _%>
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Locale;
-import java.util.Set;<% if (databaseType == 'sql' || databaseType == 'mongodb') { %>
-import java.time.ZonedDateTime;<% } %>
+import java.util.Set;
+import java.time.Instant;
 
 /**
  * A user.
@@ -41,21 +62,27 @@ public class User<% if (databaseType == 'sql' || databaseType == 'mongodb') { %>
     private static final long serialVersionUID = 1L;
 <% if (databaseType == 'sql') { %>
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    <%_ if (prodDatabaseType == 'mysql' || prodDatabaseType == 'mariadb') { _%>
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    <%_ }  else { _%>
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
+    @SequenceGenerator(name = "sequenceGenerator")
+    <%_ } _%>
     private Long id;<% } %><% if (databaseType == 'mongodb') { %>
     @Id
     private String id;<% } %><% if (databaseType == 'cassandra') { %>
     @PartitionKey
     private String id;<% } %>
 
-    <%_ var columnMax = 50;
+    <%_ let columnMax = 50;
         if (enableSocialSignIn) {
             columnMax = 100;
         } _%>
     @NotNull
     @Pattern(regexp = Constants.LOGIN_REGEX)
     @Size(min = 1, max = <%=columnMax %>)<% if (databaseType == 'sql') { %>
-    @Column(length = <%=columnMax %>, unique = true, nullable = false)<% } %>
+    @Column(length = <%=columnMax %>, unique = true, nullable = false)<% } %><% if (databaseType == 'mongodb') { %>
+    @Indexed<% } %>
     private String login;
 
     @JsonIgnore
@@ -75,8 +102,9 @@ public class User<% if (databaseType == 'sql' || databaseType == 'mongodb') { %>
     private String lastName;
 
     @Email
-    @Size(max = 100)<% if (databaseType == 'sql') { %>
-    @Column(length = 100, unique = true)<% } %>
+    @Size(min = 5, max = 100)<% if (databaseType == 'sql') { %>
+    @Column(length = 100, unique = true)<% } %><% if (databaseType == 'mongodb') { %>
+    @Indexed<% } %>
     private String email;
 <% if (databaseType == 'sql') { %>
     @NotNull
@@ -88,6 +116,13 @@ public class User<% if (databaseType == 'sql' || databaseType == 'mongodb') { %>
     @Field("lang_key")<% } %><% if (databaseType == 'cassandra') { %>
     @Column(name = "lang_key")<% } %>
     private String langKey;
+    <%_ if (databaseType == 'mongodb' || databaseType == 'sql') { _%>
+
+    @Size(max = 256)<% if (databaseType == 'sql') { %>
+    @Column(name = "image_url", length = 256)<% } %><% if (databaseType == 'mongodb') { %>
+    @Field("image_url")<% } %>
+    private String imageUrl;
+    <%_ } _%>
 
     @Size(max = 20)<% if (databaseType == 'sql') { %>
     @Column(name = "activation_key", length = 20)<% } %><% if (databaseType == 'mongodb') { %>
@@ -100,16 +135,13 @@ public class User<% if (databaseType == 'sql' || databaseType == 'mongodb') { %>
     @Column(name = "reset_key", length = 20)<% } %><% if (databaseType == 'mongodb') { %>
     @Field("reset_key")<% } %><% if (databaseType == 'cassandra') { %>
     @Column(name = "reset_key")<% } %>
-    private String resetKey;<%if (databaseType == 'sql') {%>
+    @JsonIgnore
+    private String resetKey;
 
-    @Column(name = "reset_date", nullable = true)
-    private ZonedDateTime resetDate = null;<% }%><%if (databaseType == 'mongodb') {%>
-
-    @Field("reset_date")
-    private ZonedDateTime resetDate = null;<% }%><% if (databaseType == 'cassandra') { %>
-
-    @Column(name = "reset_date")
-    private Date resetDate;<% }%>
+    <%_ if (databaseType == 'sql' || databaseType == 'cassandra') { _%>
+    @Column(name = "reset_date")<% } else if (databaseType == 'mongodb') {%>
+    @Field("reset_date")<% }%>
+    private Instant resetDate = null;
 
     @JsonIgnore<% if (databaseType == 'sql') { %>
     @ManyToMany
@@ -117,7 +149,8 @@ public class User<% if (databaseType == 'sql' || databaseType == 'mongodb') { %>
         name = "jhi_user_authority",
         joinColumns = {@JoinColumn(name = "user_id", referencedColumnName = "id")},
         inverseJoinColumns = {@JoinColumn(name = "authority_name", referencedColumnName = "name")})<% if (hibernateCache != 'no') { %>
-    @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)<% } %><% } %><% if (databaseType == 'sql' || databaseType == 'mongodb') { %>
+    @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)<% } %><% if (databaseType == 'sql') { %>
+    @BatchSize(size = 20)<% } %><% } %><% if (databaseType == 'sql' || databaseType == 'mongodb') { %>
     private Set<Authority> authorities = new HashSet<>();<% } %><% if (databaseType == 'cassandra') { %>
     private Set<String> authorities = new HashSet<>();<% } %><% if (authenticationType == 'session' && databaseType == 'sql') { %>
 
@@ -174,6 +207,16 @@ public class User<% if (databaseType == 'sql' || databaseType == 'mongodb') { %>
     public void setEmail(String email) {
         this.email = email;
     }
+    <%_ if (databaseType == 'mongodb' || databaseType == 'sql') { _%>
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+    <%_ } _%>
 
     public boolean getActivated() {
         return activated;
@@ -197,24 +240,15 @@ public class User<% if (databaseType == 'sql' || databaseType == 'mongodb') { %>
 
     public void setResetKey(String resetKey) {
         this.resetKey = resetKey;
-    }<% if (databaseType == 'sql' || databaseType == 'mongodb') {%>
+    }
 
-    public ZonedDateTime getResetDate() {
+    public Instant getResetDate() {
        return resetDate;
     }
 
-    public void setResetDate(ZonedDateTime resetDate) {
+    public void setResetDate(Instant resetDate) {
        this.resetDate = resetDate;
-    }<% }%><% if (databaseType == 'cassandra') { %>
-
-    public Date getResetDate() {
-        return resetDate;
     }
-
-    public void setResetDate(Date resetDate) {
-        this.resetDate = resetDate;
-    }<% }%>
-
     public String getLangKey() {
         return langKey;
     }
@@ -250,11 +284,7 @@ public class User<% if (databaseType == 'sql' || databaseType == 'mongodb') { %>
 
         User user = (User) o;
 
-        if (!login.equals(user.login)) {
-            return false;
-        }
-
-        return true;
+        return login.equals(user.login);
     }
 
     @Override
@@ -268,7 +298,8 @@ public class User<% if (databaseType == 'sql' || databaseType == 'mongodb') { %>
             "login='" + login + '\'' +
             ", firstName='" + firstName + '\'' +
             ", lastName='" + lastName + '\'' +
-            ", email='" + email + '\'' +
+            ", email='" + email + '\'' +<% if (databaseType == 'mongodb' || databaseType == 'sql') { %>
+            ", imageUrl='" + imageUrl + '\'' +<% } %>
             ", activated='" + activated + '\'' +
             ", langKey='" + langKey + '\'' +
             ", activationKey='" + activationKey + '\'' +

@@ -1,144 +1,171 @@
-'use strict';
-var generators = require('yeoman-generator'),
-    chalk = require('chalk'),
-    shelljs = require('shelljs'),
-    util = require('util'),
-    scriptBase = require('../generator-base');
+/**
+ * Copyright 2013-2017 the original author or authors from the JHipster project.
+ *
+ * This file is part of the JHipster project, see https://jhipster.github.io/
+ * for more information.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+const generator = require('yeoman-generator');
+const chalk = require('chalk');
+const shelljs = require('shelljs');
+const util = require('util');
+const BaseGenerator = require('../generator-base');
 
-var ReportGenerator = generators.Base.extend({});
+const ReportGenerator = generator.extend({});
 
-util.inherits(ReportGenerator, scriptBase);
+util.inherits(ReportGenerator, BaseGenerator);
 
 module.exports = ReportGenerator.extend({
-    constructor: function () {
-        generators.Base.apply(this, arguments);
+    constructor: function (...args) { // eslint-disable-line object-shorthand
+        generator.apply(this, args);
     },
 
     initializing: {
-        sayHello: function() {
+        sayHello() {
             this.log(chalk.white('Welcome to the JHipster Information Sub-Generator\n'));
         },
 
-        checkJHipster: function () {
-            var done = this.async();
+        checkJHipster() {
+            const done = this.async();
             this.log('##### **JHipster Version(s)**');
-            shelljs.exec('npm list generator-jhipster', {silent:true}, function (err, stdout, stderr) {
+            shelljs.exec('npm list generator-jhipster', { silent: true }, (err, stdout, stderr) => {
                 if (stdout) {
-                    this.log('\n```\n' + stdout + '```\n');
+                    this.log(`\n\`\`\`\n${stdout}\`\`\`\n`);
                 }
                 done();
-            }.bind(this));
+            });
         },
 
-        displayConfiguration: function () {
-            var done = this.async();
-            var result = shelljs.cat('.yo-rc.json');
-            this.log('##### **JHipster configuration, a `.yo-rc.json` file generated in the root folder**\n' +
-                '\n```yaml\n' + result + '\n```\n');
+        displayConfiguration() {
+            const done = this.async();
+            const result = shelljs.cat('.yo-rc.json');
+            this.log(`${'\n##### **JHipster configuration, a `.yo-rc.json` file generated in the root folder**\n' +
+                '\n```yaml\n'}${result}\n\`\`\`\n`);
             done();
         },
 
-        displayEntities: function () {
-            var done = this.async();
-            this.log('##### **Entity configuration(s) `entityName.json` files generated in the `.jhipster` directory**\n');
-            shelljs.ls('.jhipster/*.json').forEach(function(file) {
+        displayEntities() {
+            const done = this.async();
+            this.log('\n##### **Entity configuration(s) `entityName.json` files generated in the `.jhipster` directory**\n');
+            shelljs.ls('.jhipster/*.json').forEach((file) => {
                 this.log(file.split('/')[1]);
-                var result = shelljs.cat(file);
-                this.log('\n```yaml\n' + result + '\n```\n');
-            }.bind(this));
+                const result = shelljs.cat(file);
+                this.log(`\n\`\`\`yaml\n${result}\n\`\`\`\n`);
+            });
             done();
         },
 
-        checkJava: function () {
-            var done = this.async();
-            this.log('##### **Browsers and Operating System**\n');
-            shelljs.exec('java -version', {silent:true}, function (err, stdout, stderr) {
+        checkJava() {
+            const done = this.async();
+            this.log('\n##### **Browsers and Operating System**\n');
+            shelljs.exec('java -version', { silent: true }, (err, stdout, stderr) => {
                 if (!err) {
                     this.log(stderr);
                 }
                 done();
-            }.bind(this));
+            });
         },
 
-        checkGit: function () {
-            var done = this.async();
-            shelljs.exec('git version', {silent:true}, function (err, stdout, stderr) {
+        checkGit() {
+            const done = this.async();
+            shelljs.exec('git version', { silent: true }, (err, stdout, stderr) => {
                 if (!err) {
                     this.log(stdout);
                 }
                 done();
-            }.bind(this));
+            });
         },
 
-        checkNode: function () {
-            var done = this.async();
-            shelljs.exec('node -v', {silent:true}, function (err, stdout, stderr) {
+        checkNode() {
+            const done = this.async();
+            shelljs.exec('node -v', { silent: true }, (err, stdout, stderr) => {
                 if (!err) {
-                    this.log('node: ' + stdout);
+                    this.log(`node: ${stdout}`);
                 }
                 done();
-            }.bind(this));
+            });
         },
 
-        checkNpm: function () {
-            var done = this.async();
-            shelljs.exec('npm -v', {silent:true}, function (err, stdout, stderr) {
+        checkNpm() {
+            const done = this.async();
+            shelljs.exec('npm -v', { silent: true }, (err, stdout, stderr) => {
                 if (!err) {
-                    this.log('npm: ' + stdout);
+                    this.log(`npm: ${stdout}`);
                 }
                 done();
-            }.bind(this));
+            });
         },
 
-        checkBower: function () {
-            var done = this.async();
-            shelljs.exec('bower -v', {silent:true}, function (err, stdout, stderr) {
+        checkBower() {
+            const done = this.async();
+            shelljs.exec('bower -v', { silent: true }, (err, stdout, stderr) => {
                 if (!err) {
-                    this.log('bower: ' + stdout);
+                    this.log(`bower: ${stdout}`);
                 }
                 done();
-            }.bind(this));
+            });
         },
 
-        checkGulp: function () {
-            var done = this.async();
-            shelljs.exec('gulp -v', {silent:true}, function (err, stdout, stderr) {
+        checkGulp() {
+            const done = this.async();
+            shelljs.exec('gulp -v', { silent: true }, (err, stdout, stderr) => {
                 if (!err) {
                     this.log('gulp:');
                     this.log(stdout);
                 }
                 done();
-            }.bind(this));
+            });
         },
 
-        checkYeoman: function () {
-            var done = this.async();
-            shelljs.exec('yo --version', {silent:true}, function (err, stdout, stderr) {
+        checkYeoman() {
+            const done = this.async();
+            shelljs.exec('yo --version', { silent: true }, (err, stdout, stderr) => {
                 if (!err) {
-                    this.log('yeoman: ' + stdout);
+                    this.log(`yeoman: ${stdout}`);
                 }
                 done();
-            }.bind(this));
+            });
         },
 
-        checkDocker: function() {
-            var done = this.async();
-            shelljs.exec('docker -v', {silent:true}, function(err, stdout, stderr) {
+        checkYarn() {
+            const done = this.async();
+            shelljs.exec('yarn --version', { silent: true }, (err, stdout, stderr) => {
+                if (!err) {
+                    this.log(`yarn: ${stdout}`);
+                }
+                done();
+            });
+        },
+
+        checkDocker() {
+            const done = this.async();
+            shelljs.exec('docker -v', { silent: true }, (err, stdout, stderr) => {
                 if (!err) {
                     this.log(stdout);
                 }
                 done();
-            }.bind(this));
+            });
         },
 
-        checkDockerCompose: function() {
-            var done = this.async();
-            shelljs.exec('docker-compose -v', {silent:true}, function(err, stdout, stderr) {
+        checkDockerCompose() {
+            const done = this.async();
+            shelljs.exec('docker-compose -v', { silent: true }, (err, stdout, stderr) => {
                 if (!err) {
                     this.log(stdout);
                 }
                 done();
-            }.bind(this));
+            });
         }
     }
 });

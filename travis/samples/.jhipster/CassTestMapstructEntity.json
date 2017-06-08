@@ -1,4 +1,5 @@
 {
+    "fluentMethods": true,
     "relationships": [],
     "fields": [
         {
@@ -171,6 +172,17 @@
         {
             "fieldName": "dateRequiredField",
             "fieldType": "Date",
+            "fieldValidateRules": [
+                "required"
+            ]
+        },
+        {
+            "fieldName": "zonedDateTimeField",
+            "fieldType": "ZonedDateTime"
+        },
+        {
+            "fieldName": "zonedDateTimeRequiredField",
+            "fieldType": "ZonedDateTime",
             "fieldValidateRules": [
                 "required"
             ]

@@ -1,4 +1,5 @@
 {
+    "fluentMethods": true,
     "relationships": [
         {
             "relationshipName": "user",
@@ -50,7 +51,7 @@
         },
         {
             "fieldName": "lastOperationDate",
-            "fieldType": "ZonedDateTime"
+            "fieldType": "Instant"
         },
         {
             "fieldName": "active",

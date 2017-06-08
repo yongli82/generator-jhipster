@@ -1,11 +1,34 @@
+<%#
+ Copyright 2013-2017 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://jhipster.github.io/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
 package <%=packageName%>.domain;
-<% if (databaseType == 'mongodb') { %>
+<%_ if (databaseType == 'mongodb') { _%>
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;<% } %>
-import java.time.LocalDateTime;<% if (databaseType == 'sql') { %>
-import javax.persistence.*;<% } %>
+import org.springframework.data.mongodb.core.mapping.Field;
+<%_ } else if (databaseType == 'sql') { _%>
+
+import javax.persistence.*;
+<%_ } _%>
 import javax.validation.constraints.NotNull;
+import java.io.Serializable;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,10 +39,15 @@ import java.util.Map;
 @Entity
 @Table(name = "jhi_persistent_audit_event")<% } %><% if (databaseType == 'mongodb') { %>
 @Document(collection = "jhi_persistent_audit_event")<% } %>
-public class PersistentAuditEvent {
+public class PersistentAuditEvent implements Serializable {
 
     @Id<% if (databaseType == 'sql') { %>
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    <%_ if (prodDatabaseType == 'mysql' || prodDatabaseType == 'mariadb') { _%>
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    <%_ }  else { _%>
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
+    @SequenceGenerator(name = "sequenceGenerator")
+    <%_ } _%>
     @Column(name = "event_id")
     private Long id;<% } else { %>
     @Field("event_id")
@@ -30,7 +58,7 @@ public class PersistentAuditEvent {
     private String principal;
 <% if (databaseType == 'sql') { %>
     @Column(name = "event_date")<% } %>
-    private LocalDateTime auditEventDate;<% if (databaseType == 'sql') { %>
+    private Instant auditEventDate;<% if (databaseType == 'sql') { %>
     @Column(name = "event_type")<% } %><% if (databaseType == 'mongodb') { %>
     @Field("event_type")<% } %>
     private String auditEventType;
@@ -64,11 +92,11 @@ public class PersistentAuditEvent {
         this.principal = principal;
     }
 
-    public LocalDateTime getAuditEventDate() {
+    public Instant getAuditEventDate() {
         return auditEventDate;
     }
 
-    public void setAuditEventDate(LocalDateTime auditEventDate) {
+    public void setAuditEventDate(Instant auditEventDate) {
         this.auditEventDate = auditEventDate;
     }
 

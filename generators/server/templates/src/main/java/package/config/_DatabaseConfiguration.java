@@ -1,110 +1,96 @@
-package <%=packageName%>.config;
-<% if (databaseType == 'sql') { %>
-import <%=packageName%>.config.liquibase.AsyncSpringLiquibase;
+<%#
+ Copyright 2013-2017 the original author or authors from the JHipster project.
 
-import com.codahale.metrics.MetricRegistry;
-import com.fasterxml.jackson.datatype.hibernate4.Hibernate4Module;
-import com.zaxxer.hikari.HikariDataSource;
-import liquibase.integration.spring.SpringLiquibase;<% } %><% if (databaseType == 'mongodb' && authenticationType == 'oauth2') { %>
-import <%=packageName%>.config.oauth2.OAuth2AuthenticationReadConverter;<% } %><% if (databaseType == 'mongodb') { %>
-import <%=packageName%>.domain.util.JSR310DateConverters.*;
-import com.mongodb.Mongo;
-import com.github.mongobee.Mongobee;<% } %>
+ This file is part of the JHipster project, see https://jhipster.github.io/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%=packageName%>.config;
+<%_ if (databaseType == 'sql') { _%>
+
+import io.github.jhipster.config.JHipsterConstants;
+import io.github.jhipster.config.liquibase.AsyncSpringLiquibase;
+
+import liquibase.integration.spring.SpringLiquibase;
+<%_ } _%>
+<%_ if (databaseType == 'mongodb' && authenticationType == 'oauth2') { _%>
+
+import <%=packageName%>.config.oauth2.OAuth2AuthenticationReadConverter;
+<%_ } _%>
+<%_ if (databaseType == 'mongodb') { _%>
+
+import com.github.mongobee.Mongobee;
+import com.mongodb.MongoClient;
+import io.github.jhipster.config.JHipsterConstants;
+import io.github.jhipster.domain.util.JSR310DateConverters.DateToZonedDateTimeConverter;
+import io.github.jhipster.domain.util.JSR310DateConverters.ZonedDateTimeToDateConverter;
+<%_ } _%>
 <%_ if (devDatabaseType == 'h2Disk' || devDatabaseType == 'h2Memory') { _%>
 import org.h2.tools.Server;
 <%_ } _%>
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;<% if (databaseType == 'sql') { %><% if (hibernateCache == 'hazelcast') { %>
-import org.springframework.cache.CacheManager;<% } %>
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;<% } %><% if (databaseType == 'mongodb') { %>
+import org.slf4j.LoggerFactory;<% if (databaseType == 'mongodb') { %>
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoProperties;<% } %><% if (databaseType == 'sql') { %>
-import org.springframework.boot.autoconfigure.jdbc.DataSourceBuilder;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
-import org.springframework.boot.autoconfigure.liquibase.LiquibaseProperties;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.ApplicationContextException;<% } %>
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.liquibase.LiquibaseProperties;<% } %>
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;<% if (databaseType == 'mongodb') { %>
-import org.springframework.context.annotation.Import;<% } %><% if (databaseType == 'sql') { %>
+import org.springframework.context.annotation.Configuration;<% if (databaseType == 'mongodb') { %>
+import org.springframework.context.annotation.Import;<% } %><% if (databaseType == 'mongodb' || devDatabaseType == 'h2Disk' || devDatabaseType == 'h2Memory') { %>
+import org.springframework.context.annotation.Profile;<% } %><% if (databaseType == 'sql') { %>
 import org.springframework.core.env.Environment;<% } %><% if (databaseType == 'mongodb') { %>
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.convert.converter.Converter;<% } %><% if (searchEngine == 'elasticsearch') { %>
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;<% } %><% if (databaseType == 'mongodb') { %>
-import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
-import org.springframework.data.mongodb.core.convert.CustomConversions;<% } %><% if (databaseType == 'mongodb' && authenticationType == 'oauth2') { %>
-import org.springframework.data.mongodb.core.convert.CustomConversions;<% } %><% if (databaseType == 'mongodb') { %>
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.convert.CustomConversions;
 import org.springframework.data.mongodb.core.mapping.event.ValidatingMongoEventListener;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
-import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;<% } %><% if (databaseType == 'sql') { %>
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;<% } %>
+<%_ if (databaseType == 'sql') { _%>
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-import javax.inject.Inject;
 import javax.sql.DataSource;
 <%_ if (devDatabaseType == 'h2Disk' || devDatabaseType == 'h2Memory') { _%>
 import java.sql.SQLException;
-<%_ } _%>
-import java.util.Arrays;<% } %><% if (databaseType == 'mongodb') { %>
-import javax.inject.Inject;
+<%_ } } _%>
+<%_ if (databaseType == 'mongodb') { _%>
+
 import java.util.ArrayList;
 import java.util.List;
-<% } %>
+<%_ } _%>
 
 @Configuration<% if (databaseType == 'sql') { %>
 @EnableJpaRepositories("<%=packageName%>.repository")
 @EnableJpaAuditing(auditorAwareRef = "springSecurityAuditorAware")
 @EnableTransactionManagement<% } %><% if (searchEngine == 'elasticsearch') { %>
 @EnableElasticsearchRepositories("<%=packageName%>.repository.search")<% } %><% if (databaseType == 'mongodb') { %>
-@Profile("!" + Constants.SPRING_PROFILE_CLOUD)
+@Profile("!" + JHipsterConstants.SPRING_PROFILE_CLOUD)
 @EnableMongoRepositories("<%=packageName%>.repository")
 @Import(value = MongoAutoConfiguration.class)
 @EnableMongoAuditing(auditorAwareRef = "springSecurityAuditorAware")<% } %>
-public class DatabaseConfiguration <% if (databaseType == 'mongodb') { %>extends AbstractMongoConfiguration <% } %>{
+public class DatabaseConfiguration {
 
     private final Logger log = LoggerFactory.getLogger(DatabaseConfiguration.class);<% if (databaseType == 'sql') { %>
 
-    @Inject
-    private Environment env;
+    private final Environment env;
 
-    @Autowired(required = false)
-    private MetricRegistry metricRegistry;<% } %><% if (databaseType == 'mongodb') { %>
-
-    @Inject
-    private Mongo mongo;
-
-    @Inject
-    private MongoProperties mongoProperties;<% } %><% if (databaseType == 'sql') { %>
-
-    @Bean(destroyMethod = "close")
-    @ConditionalOnExpression("#{!environment.acceptsProfiles('" + Constants.SPRING_PROFILE_CLOUD + "') && !environment.acceptsProfiles('" + Constants.SPRING_PROFILE_HEROKU + "')}")
-    @ConfigurationProperties(prefix = "spring.datasource.hikari")
-    public DataSource dataSource(DataSourceProperties dataSourceProperties<% if (hibernateCache == 'hazelcast') { %>, CacheManager cacheManager<% } %>) {
-        log.debug("Configuring Datasource");
-        if (dataSourceProperties.getUrl() == null) {
-            log.error("Your database connection pool configuration is incorrect! The application" +
-                    " cannot start. Please check your Spring profile, current profiles are: {}",
-                Arrays.toString(env.getActiveProfiles()));
-
-            throw new ApplicationContextException("Database connection pool is not configured correctly");
-        }
-        HikariDataSource hikariDataSource =  (HikariDataSource) DataSourceBuilder
-                .create(dataSourceProperties.getClassLoader())
-                .type(HikariDataSource.class)
-                .driverClassName(dataSourceProperties.getDriverClassName())
-                .url(dataSourceProperties.getUrl())
-                .username(dataSourceProperties.getUsername())
-                .password(dataSourceProperties.getPassword())
-                .build();
-
-        if (metricRegistry != null) {
-            hikariDataSource.setMetricRegistry(metricRegistry);
-        }
-        return hikariDataSource;
+    public DatabaseConfiguration(Environment env) {
+        this.env = env;
     }
 <%_ if (devDatabaseType == 'h2Disk' || devDatabaseType == 'h2Memory') { _%>
 
@@ -115,36 +101,30 @@ public class DatabaseConfiguration <% if (databaseType == 'mongodb') { %>extends
      * @throws SQLException if the server failed to start
      */
     @Bean(initMethod = "start", destroyMethod = "stop")
-    @Profile(Constants.SPRING_PROFILE_DEVELOPMENT)
+    @Profile(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT)
     public Server h2TCPServer() throws SQLException {
         return Server.createTcpServer("-tcp","-tcpAllowOthers");
     }
-
 <%_ } _%>
+
     @Bean
-    public SpringLiquibase liquibase(DataSource dataSource, DataSourceProperties dataSourceProperties,
-        LiquibaseProperties liquibaseProperties) {
+    public SpringLiquibase liquibase(@Qualifier("taskExecutor") TaskExecutor taskExecutor,
+            DataSource dataSource, LiquibaseProperties liquibaseProperties) {
 
         // Use liquibase.integration.spring.SpringLiquibase if you don't want Liquibase to start asynchronously
-        SpringLiquibase liquibase = new AsyncSpringLiquibase();
+        SpringLiquibase liquibase = new AsyncSpringLiquibase(taskExecutor, env);
         liquibase.setDataSource(dataSource);
         liquibase.setChangeLog("classpath:config/liquibase/master.xml");
         liquibase.setContexts(liquibaseProperties.getContexts());
         liquibase.setDefaultSchema(liquibaseProperties.getDefaultSchema());
         liquibase.setDropFirst(liquibaseProperties.isDropFirst());
-        if (env.acceptsProfiles(Constants.SPRING_PROFILE_NO_LIQUIBASE)) {
+        if (env.acceptsProfiles(JHipsterConstants.SPRING_PROFILE_NO_LIQUIBASE)) {
             liquibase.setShouldRun(false);
         } else {
             liquibase.setShouldRun(liquibaseProperties.isEnabled());
             log.debug("Configuring Liquibase");
         }
-
         return liquibase;
-    }
-
-    @Bean
-    public Hibernate4Module hibernate4Module() {
-        return new Hibernate4Module();
     }<% } %><% if (databaseType == 'mongodb') { %>
 
     @Bean
@@ -157,34 +137,21 @@ public class DatabaseConfiguration <% if (databaseType == 'mongodb') { %>extends
         return new LocalValidatorFactoryBean();
     }
 
-    @Override
-    protected String getDatabaseName() {
-        return mongoProperties.getDatabase();
-    }
-
-    @Override
-    public Mongo mongo() throws Exception {
-        return mongo;
-    }
-
     @Bean
     public CustomConversions customConversions() {
         List<Converter<?, ?>> converters = new ArrayList<>();<% if (authenticationType == 'oauth2') { %>
         converters.add(new OAuth2AuthenticationReadConverter());<% } %>
         converters.add(DateToZonedDateTimeConverter.INSTANCE);
         converters.add(ZonedDateTimeToDateConverter.INSTANCE);
-        converters.add(DateToLocalDateConverter.INSTANCE);
-        converters.add(LocalDateToDateConverter.INSTANCE);
-        converters.add(DateToLocalDateTimeConverter.INSTANCE);
-        converters.add(LocalDateTimeToDateConverter.INSTANCE);
         return new CustomConversions(converters);
     }
 
     @Bean
-    public Mongobee mongobee() {
+    public Mongobee mongobee(MongoClient mongoClient, MongoTemplate mongoTemplate, MongoProperties mongoProperties) {
         log.debug("Configuring Mongobee");
-        Mongobee mongobee = new Mongobee(mongo);
+        Mongobee mongobee = new Mongobee(mongoClient);
         mongobee.setDbName(mongoProperties.getDatabase());
+        mongobee.setMongoTemplate(mongoTemplate);
         // package to scan for migrations
         mongobee.setChangeLogsScanPackage("<%=packageName%>.config.dbmigrations");
         mongobee.setEnabled(true);

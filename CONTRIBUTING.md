@@ -2,6 +2,7 @@
 
 Are you ready to contribute to JHipster? We'd love to have you on board, and we will help you as much as we can. Here are the guidelines we'd like you to follow so that we can be of more help:
 
+ - [Questions and help](#question)
  - [Issues and Bugs](#issue)
  - [Feature Requests](#feature)
  - [Submission Guidelines](#submit)
@@ -9,8 +10,13 @@ Are you ready to contribute to JHipster? We'd love to have you on board, and we 
  - [Coding Rules](#rules)
  - [Git Commit Guidelines](#commit)
 
+## <a name="question"></a> Questions and help
+This is the JHipster bug tracker, and it is used for [Issues and Bugs](#issue) and for [Feature Requests](#feature). It is **not** a help desk or a support forum.
+
+If you have a question on using JHipster, or if you need help with your JHipster project, please [read our help page](https://jhipster.github.io/help/) and use the [JHipster tag on StackOverflow](http://stackoverflow.com/tags/jhipster) or join our [Gitter.im chat room](https://gitter.im/jhipster/generator-jhipster).
+
 ## <a name="issue"></a> Issues and Bugs
-If you find a bug in the source code or a mistake in the documentation, you can help us by submitting a ticket to our [GitHub  issues](https://github.com/jhipster/generator-jhipster/issues). Even better, you can submit a Pull Request to our [JHipster generator project](https://github.com/jhipster/generator-jhipster) or to our [Documentation project](https://github.com/jhipster/jhipster.github.io).
+If you find a bug in the source code or a mistake in the documentation, you can help us by submitting a ticket to our [GitHub issues](https://github.com/jhipster/generator-jhipster/issues). Even better, you can submit a Pull Request to our [JHipster generator project](https://github.com/jhipster/generator-jhipster) or to our [Documentation project](https://github.com/jhipster/jhipster.github.io).
 
 **Please see the Submission Guidelines below**.
 
@@ -24,33 +30,37 @@ would like to implement a new feature then consider what kind of change it is:
 ## <a name="submit"></a> Submission Guidelines
 
 ### Submitting an Issue
-Before you submit your issue search the archive, maybe your question was already answered.
+Before you submit your issue search the [archive](https://github.com/jhipster/generator-jhipster/issues?utf8=%E2%9C%93&q=is%3Aissue), maybe your question was already answered.
 
-If your issue appears to be a bug, and hasn't been reported, open a new issue.
+If your issue appears to be a bug, and has not been reported, open a new issue.
 Help us to maximize the effort we can spend fixing issues and adding new
 features, by not reporting duplicate issues.  Providing the following information will increase the
 chances of your issue being dealt with quickly:
 
 * **Overview of the issue** - if an error is being thrown a stack trace helps
 * **Motivation for or Use Case** - explain why this is a bug for you
-* **JHipster Version(s)** - is it a regression?
-* **JHipster configuration, a `.yo-rc.json` file generated in the root folder** - this will help us to replicate the scenario, you can remove the rememberMe key.
-* **Entity configuration(s) `entityName.json` files generated in the `.jhipster` directory** - if the error is during an entity creation or associated with a specific entity
-* **Browsers and Operating System** - is this a problem with all browsers or only IE8?
 * **Reproduce the error** - an unambiguous set of steps to reproduce the error. If you have a JavaScript error, maybe you can provide a live example with
   [JSFiddle](http://jsfiddle.net/)?
 * **Related issues** - has a similar issue been reported before?
 * **Suggest a Fix** - if you can't fix the bug yourself, perhaps you can point to what might be
   causing the problem (line of code or commit)
+* **JHipster Version(s)** - is it a regression?
+* **JHipster configuration, a `.yo-rc.json` file generated in the root folder** - this will help us to replicate the scenario, you can remove the rememberMe key.
+* **Entity configuration(s) `entityName.json` files generated in the `.jhipster` directory** - if the error is during an entity creation or associated with a specific entity
+* **Browsers and Operating System** - is this a problem with all browsers or only IE8?
 
-Click [here](https://github.com/jhipster/generator-jhipster/issues/new) to open a bug issue with a pre-filled template. For feature requests and quiries you can use [this template][feature-template].
+You can use `jhipster info` to provide us the information we need.
+
+Click [here](https://github.com/jhipster/generator-jhipster/issues/new) to open a bug issue with a pre-filled template. For feature requests and enquiries you can use [this template][feature-template].
+
+You can run `jhipster info` in your project folder to get most of the above required info.
 
 Issues opened without any of these info will be **closed** without any explanation.
 
 ### Submitting a Pull Request
 Before you submit your pull request consider the following guidelines:
 
-* Search [GitHub](https://github.com/jhipster/generator-jhipster/pulls) for an open or closed Pull Request
+* Search [GitHub](https://github.com/jhipster/generator-jhipster/pulls?utf8=%E2%9C%93&q=is%3Apr) for an open or closed Pull Request
   that relates to your submission.
 * If you want to modify the JHipster generator, read our [Generator development setup](#setup)
 * Make your changes in a new git branch
@@ -72,6 +82,7 @@ Before you submit your pull request consider the following guidelines:
      ```shell
      mvn spring-boot:run
      ```
+* You can also run our travis build locally by following [this](#local-travis-build)
 
 * Commit your changes using a descriptive commit message that follows our
   [commit message conventions](#commit-message-format).
@@ -172,37 +183,59 @@ Go to the [generator-jhipster project](https://github.com/jhipster/generator-jhi
 
 [Please read the Github forking documentation for more information](https://help.github.com/articles/fork-a-repo)
 
-### Set NPM to use the cloned project
+### Set NPM/YARN to use the cloned project
 
-In your cloned project, type:
+In your cloned `generator-jhipster` project, type `npm link` or `yarn link` depending on the package manager you use.
+
+This will do a symbolic link from the global `node_modules` version to point to this folder, so when we run `jhipster`, you will now use the development version of JHipster.
+
+For testing, you will want to generate an application, and there is a specific issue here: for each application, JHipster installs a local version of itself. This is made to enable several applications to each use a specific JHipster version (application A uses JHipster 3.1.0, and application B uses JHipster 3.2.0).
+
+To overcome this you need to run `npm link generator-jhipster` or `yarn link generator-jhipster` on the generated project folder as well, so that the local version has a symbolic link to the development version of JHipster.
+
+To put it in a nutshell, you need to:
+
+1. run `npm link` or `yarn link` on the `generator-jhipster` project
+2. run `npm link generator-jhipster` or `yarn link generator-jhipster` on the generated application folder (you need to do this for each application you create)
+
+Now, running the 'jhipster' command should use your specific JHipster version. You can test it by making a small change in your cloned generator, and running again on an existing JHipster project:
 
 ```shell
-npm link
+jhipster
 ```
 
-Now, running the 'yo jhipster' command should use your specific JHipster version. You can test it by making a small change in your cloned generator, and running again on an existing JHipster project:
-
-```shell
-yo jhipster
-```
-
-TIP: If this doesn't work, try running `npm link generator-jhipster` in your project. See [this guide](http://justjs.com/posts/npm-link-developing-your-own-npm-modules-without-tears) for more information.
-
-You should see your changes reflected in the JHipster project.
+You should see your changes reflected in the generated project.
 
 ### Use a text editor
 
-As modifying the JHipster generator includes modifying Java and JavaScript templates, most IDE will not work correctly. We recommend you use a text editor like [Atom](https://atom.io/) to code your changes.
+As modifying the JHipster generator includes modifying Java and JavaScript templates, most IDE will not work correctly. We recommend you use a text editor like [Atom](https://atom.io/) or [VSCode](https://code.visualstudio.com/) to code your changes.
+
+## Local Travis Build
+
+You can run the travis builds locally by following below commands
+
+CD into the travis folder `cd travis` from the generator source code root folder
+
+Run `./build-samples.sh [command_name] [sample_name:optional]`
+
+Sample name is optional and can be any of the folder name in the `travis/samples` folder. If not specified the it will mean all samples
+
+Command name can be as below
+
+    `generate`: Generate the sample if specified else generate all samples
+    `build` : Generate and test the sample if specified else generate and test all samples
+    `clean` : Clean the generated code for the sample if specified else clean all samples
 
 ## <a name="rules"></a> Coding Rules
 To ensure consistency throughout the source code, keep these rules in mind as you are working:
 
 * All features or bug fixes **must be tested** by one or more tests.
-* All files must follow the [.editorconfig file](http://editorconfig.org/) located at the root of the JHipster generator project. Please note that generated projects use the same .editorconfig file, so that both the generator and the generated projects share the same configuration.
-* Java files **must be** formatted using [Intellij IDEA's code style](http://confluence.jetbrains.com/display/IntelliJIDEA/Code+Style+and+Formatting). Please note that JHipster commiters have a free Intellij IDEA Ultimate Edition for developing the project.
+* All files must follow the [.editorconfig file](http://editorconfig.org/) located at the root of the JHipster generator project. Please note that generated projects use the same `.editorconfig` file, so that both the generator and the generated projects share the same configuration.
+* Java files **must be** formatted using [Intellij IDEA's code style](http://confluence.jetbrains.com/display/IntelliJIDEA/Code+Style+and+Formatting). Please note that JHipster committers have a free Intellij IDEA Ultimate Edition for developing the project.
 * Generators JavaScript files **must follow** the eslint configuration defined at the project root, which is based on [Airbnb JavaScript Style Guide](https://github.com/airbnb/javascript).
 * Web apps JavaScript files **must follow** [Google's JavaScript Style Guide](https://google-styleguide.googlecode.com/svn/trunk/javascriptguide.xml).
 * AngularJS files **must follow** [John Papa's Angular 1 style guide] (https://github.com/johnpapa/angular-styleguide/blob/master/a1/README.md).
+* Angular 2+ Typescript files **must follow** [Official Angular style guide] (https://angular.io/styleguide).
 
 Please ensure to run `npm run lint` and `npm test` on the project root before submitting a pull request. You can also run `npm run lint-fix` to fix some of the lint issues automatically.
 
@@ -213,7 +246,7 @@ For simple code (few lines), logic can be embedded in the main file but if logic
 
 Sub templates should be named with the `ejs` extension because it's the default one, it enables editors to apply correct syntax highlighting and it enables us to use a very concise syntax:
 
-    <%- include field_validators -%>
+    <%- include('field_validators'); -%>
 
 This statement means that [_Entity.java](generators/entity/templates/src/main/java/package/domain/_Entity.java) template includes [field_validators.ejs](generators/entity/templates/src/main/java/package/domain/field_validators.ejs) sub template.
 
@@ -244,13 +277,13 @@ The Header contains a succinct description of the change:
 * don't capitalize first letter
 * no dot (.) at the end
 
-###Body
+### Body
 If your change is simple, the Body is optional.
 
 Just as in the Header, use the imperative, present tense: "change" not "changed" nor "changes".
 The Body should include the motivation for the change and contrast this with previous behavior.
 
-###Footer
+### Footer
 The footer is the place to reference GitHub issues that this commit **Closes**.
 
 You **must** use the [Github keywords](https://help.github.com/articles/closing-issues-via-commit-messages) for

@@ -1,36 +1,53 @@
+<%#
+ Copyright 2013-2017 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://jhipster.github.io/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
 package <%=packageName%>.web.rest;
 
 import <%=packageName%>.config.Constants;
-import com.codahale.metrics.annotation.Timed;<% if (databaseType == 'sql' || databaseType == 'mongodb') { %>
-import <%=packageName%>.domain.Authority;<% } %>
-import <%=packageName%>.domain.User;<% if (databaseType == 'sql' || databaseType == 'mongodb') { %>
-import <%=packageName%>.repository.AuthorityRepository;<% } %>
+import com.codahale.metrics.annotation.Timed;
+import <%=packageName%>.domain.User;
 import <%=packageName%>.repository.UserRepository;<% if (searchEngine == 'elasticsearch') { %>
 import <%=packageName%>.repository.search.UserSearchRepository;<% } %>
 import <%=packageName%>.security.AuthoritiesConstants;
 import <%=packageName%>.service.MailService;
 import <%=packageName%>.service.UserService;
-import <%=packageName%>.web.rest.dto.ManagedUserDTO;
+import <%=packageName%>.service.dto.UserDTO;
+import <%=packageName%>.web.rest.vm.ManagedUserVM;
 import <%=packageName%>.web.rest.util.HeaderUtil;<% if (databaseType == 'sql' || databaseType == 'mongodb') { %>
 import <%=packageName%>.web.rest.util.PaginationUtil;<% } %>
+import io.github.jhipster.web.util.ResponseUtil;
+import io.swagger.annotations.ApiParam;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;<% if (databaseType == 'sql' || databaseType == 'mongodb') { %>
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;<% } %>
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.annotation.Secured;<% if (databaseType == 'sql') { %>
-import org.springframework.transaction.annotation.Transactional;<% } %>
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
-import javax.inject.Inject;
+import javax.validation.Valid;
 import java.net.URI;
 import java.net.URISyntaxException;
-import javax.servlet.http.HttpServletRequest;
-import java.util.*;
-import java.util.stream.Collectors;<% if (searchEngine == 'elasticsearch') { %>
+import java.util.*;<% if (searchEngine == 'elasticsearch') { %>
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static org.elasticsearch.index.query.QueryBuilders.*;<% } %>
@@ -41,11 +58,11 @@ import static org.elasticsearch.index.query.QueryBuilders.*;<% } %>
  * <p>This class accesses the User entity, and needs to fetch its collection of authorities.</p>
  * <p>
  * For a normal use-case, it would be better to have an eager relationship between User and Authority,
- * and send everything to the client side: there would be no DTO, a lot less code, and an outer-join
+ * and send everything to the client side: there would be no View Model and DTO, a lot less code, and an outer-join
  * which would be good for performance.
  * </p>
  * <p>
- * We use a DTO for 3 reasons:
+ * We use a View Model and a DTO for 3 reasons:
  * <ul>
  * <li>We want to keep a lazy association between the user and the authorities, because people will
  * quite often do relationships with the user, and we don't want them to get the authorities all
@@ -65,21 +82,26 @@ public class UserResource {
 
     private final Logger log = LoggerFactory.getLogger(UserResource.class);
 
-    @Inject
-    private UserRepository userRepository;
+    private static final String ENTITY_NAME = "userManagement";
 
-    @Inject
-    private MailService mailService;
+    private final UserRepository userRepository;
 
-<% if (databaseType == 'sql' || databaseType == 'mongodb') { %>
-    @Inject
-    private AuthorityRepository authorityRepository;<% } %>
+    private final MailService mailService;
 
-    @Inject
-    private UserService userService;<% if (searchEngine == 'elasticsearch') { %>
+    private final UserService userService;<% if (searchEngine == 'elasticsearch') { %>
 
-    @Inject
-    private UserSearchRepository userSearchRepository;<% } %>
+    private final UserSearchRepository userSearchRepository;<% } %>
+
+    public UserResource(UserRepository userRepository, MailService mailService,
+            UserService userService<% if (searchEngine == 'elasticsearch') { %>, UserSearchRepository userSearchRepository<% } %>) {
+
+        this.userRepository = userRepository;
+        this.mailService = mailService;
+        this.userService = userService;
+        <%_ if (searchEngine == 'elasticsearch') { _%>
+        this.userSearchRepository = userSearchRepository;
+        <%_ } _%>
+    }
 
     /**
      * POST  /users  : Creates a new user.
@@ -89,37 +111,32 @@ public class UserResource {
      * The user needs to be activated on creation.
      * </p>
      *
-     * @param managedUserDTO the user to create
-     * @param request the HTTP request
+     * @param managedUserVM the user to create
      * @return the ResponseEntity with status 201 (Created) and with body the new user, or with status 400 (Bad Request) if the login or email is already in use
      * @throws URISyntaxException if the Location URI syntax is incorrect
      */
-    @RequestMapping(value = "/users",
-        method = RequestMethod.POST,
-        produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping("/users")
     @Timed
     @Secured(AuthoritiesConstants.ADMIN)
-    public ResponseEntity<?> createUser(@RequestBody ManagedUserDTO managedUserDTO, HttpServletRequest request) throws URISyntaxException {
-        log.debug("REST request to save User : {}", managedUserDTO);
+    public ResponseEntity createUser(@Valid @RequestBody ManagedUserVM managedUserVM) throws URISyntaxException {
+        log.debug("REST request to save User : {}", managedUserVM);
 
-        //Lowercase the user login before comparing with database
-        if (userRepository.findOneByLogin(managedUserDTO.getLogin().toLowerCase()).isPresent()) {
+        if (managedUserVM.getId() != null) {
             return ResponseEntity.badRequest()
-                .headers(HeaderUtil.createFailureAlert("userManagement", "userexists", "Login already in use"))
+                .headers(HeaderUtil.createFailureAlert(ENTITY_NAME, "idexists", "A new user cannot already have an ID"))
                 .body(null);
-        } else if (userRepository.findOneByEmail(managedUserDTO.getEmail()).isPresent()) {
+        // Lowercase the user login before comparing with database
+        } else if (userRepository.findOneByLogin(managedUserVM.getLogin().toLowerCase()).isPresent()) {
             return ResponseEntity.badRequest()
-                .headers(HeaderUtil.createFailureAlert("userManagement", "emailexists", "Email already in use"))
+                .headers(HeaderUtil.createFailureAlert(ENTITY_NAME, "userexists", "Login already in use"))
+                .body(null);
+        } else if (userRepository.findOneByEmail(managedUserVM.getEmail()).isPresent()) {
+            return ResponseEntity.badRequest()
+                .headers(HeaderUtil.createFailureAlert(ENTITY_NAME, "emailexists", "Email already in use"))
                 .body(null);
         } else {
-            User newUser = userService.createUser(managedUserDTO);
-            String baseUrl = request.getScheme() + // "http"
-            "://" +                                // "://"
-            request.getServerName() +              // "myhost"
-            ":" +                                  // ":"
-            request.getServerPort() +              // "80"
-            request.getContextPath();              // "/myContextPath" or "" if deployed in root context
-            mailService.sendCreationEmail(newUser, baseUrl);
+            User newUser = userService.createUser(managedUserVM);
+            mailService.sendCreationEmail(newUser);
             return ResponseEntity.created(new URI("/api/users/" + newUser.getLogin()))
                 .headers(HeaderUtil.createAlert(<% if(enableTranslation) {%> "userManagement.created"<% } else { %> "A user is created with identifier " + newUser.getLogin()<% } %>, newUser.getLogin()))
                 .body(newUser);
@@ -129,85 +146,56 @@ public class UserResource {
     /**
      * PUT  /users : Updates an existing User.
      *
-     * @param managedUserDTO the user to update
+     * @param managedUserVM the user to update
      * @return the ResponseEntity with status 200 (OK) and with body the updated user,
      * or with status 400 (Bad Request) if the login or email is already in use,
      * or with status 500 (Internal Server Error) if the user couldn't be updated
      */
-    @RequestMapping(value = "/users",
-        method = RequestMethod.PUT,
-        produces = MediaType.APPLICATION_JSON_VALUE)
-    @Timed<% if (databaseType == 'sql') { %>
-    @Transactional<% } %>
+    @PutMapping("/users")
+    @Timed
     @Secured(AuthoritiesConstants.ADMIN)
-    public ResponseEntity<ManagedUserDTO> updateUser(@RequestBody ManagedUserDTO managedUserDTO) {
-        log.debug("REST request to update User : {}", managedUserDTO);
-        Optional<User> existingUser = userRepository.findOneByEmail(managedUserDTO.getEmail());
-        if (existingUser.isPresent() && (!existingUser.get().getId().equals(managedUserDTO.getId()))) {
-            return ResponseEntity.badRequest().headers(HeaderUtil.createFailureAlert("userManagement", "emailexists", "E-mail already in use")).body(null);
+    public ResponseEntity<UserDTO> updateUser(@Valid @RequestBody ManagedUserVM managedUserVM) {
+        log.debug("REST request to update User : {}", managedUserVM);
+        Optional<User> existingUser = userRepository.findOneByEmail(managedUserVM.getEmail());
+        if (existingUser.isPresent() && (!existingUser.get().getId().equals(managedUserVM.getId()))) {
+            return ResponseEntity.badRequest().headers(HeaderUtil.createFailureAlert(ENTITY_NAME, "emailexists", "Email already in use")).body(null);
         }
-        existingUser = userRepository.findOneByLogin(managedUserDTO.getLogin().toLowerCase());
-        if (existingUser.isPresent() && (!existingUser.get().getId().equals(managedUserDTO.getId()))) {
-            return ResponseEntity.badRequest().headers(HeaderUtil.createFailureAlert("userManagement", "userexists", "Login already in use")).body(null);
+        existingUser = userRepository.findOneByLogin(managedUserVM.getLogin().toLowerCase());
+        if (existingUser.isPresent() && (!existingUser.get().getId().equals(managedUserVM.getId()))) {
+            return ResponseEntity.badRequest().headers(HeaderUtil.createFailureAlert(ENTITY_NAME, "userexists", "Login already in use")).body(null);
         }
-        return userRepository
-            .findOneById(managedUserDTO.getId())
-            .map(user -> {
-                user.setLogin(managedUserDTO.getLogin());
-                user.setFirstName(managedUserDTO.getFirstName());
-                user.setLastName(managedUserDTO.getLastName());
-                user.setEmail(managedUserDTO.getEmail());
-                user.setActivated(managedUserDTO.isActivated());
-                user.setLangKey(managedUserDTO.getLangKey());<% if (databaseType == 'sql' || databaseType == 'mongodb') { %>
-                Set<Authority> authorities = user.getAuthorities();
-                authorities.clear();
-                managedUserDTO.getAuthorities().stream().forEach(
-                    authority -> authorities.add(authorityRepository.findOne(authority))
-                );<% if (databaseType == 'mongodb') { %>
-                userRepository.save(user);<% } %>
-                return ResponseEntity.ok()
-                    .headers(HeaderUtil.createAlert(<% if(enableTranslation) {%>"userManagement.updated"<% } else { %>"A user is updated with identifier " + managedUserDTO.getLogin()<% } %>, managedUserDTO.getLogin()))
-                    .body(new ManagedUserDTO(userRepository
-                        .findOne(managedUserDTO.getId())));<% } else { %>
-                user.setAuthorities(managedUserDTO.getAuthorities());
-                userRepository.save(user);
-                return ResponseEntity.ok()
-                    .headers(HeaderUtil.createAlert(<% if(enableTranslation) {%>"userManagement.updated"<% } else { %> "A user is updated with identifier " + managedUserDTO.getLogin()<% } %>, managedUserDTO.getLogin()))
-                    .body(new ManagedUserDTO(userRepository
-                        .findOne(managedUserDTO.getId())));<% } %>
-            })
-            .orElseGet(() -> new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
+        Optional<UserDTO> updatedUser = userService.updateUser(managedUserVM);
 
+        return ResponseUtil.wrapOrNotFound(updatedUser,
+            HeaderUtil.createAlert(<% if(enableTranslation) { %>"userManagement.updated"<% } else { %>"A user is updated with identifier " + managedUserVM.getLogin()<% } %>, managedUserVM.getLogin()));
     }
 
     /**
      * GET  /users : get all users.
-     * <% if (databaseType == 'sql' || databaseType == 'mongodb') { %>
+     *<% if (databaseType == 'sql' || databaseType == 'mongodb') { %>
      * @param pageable the pagination information<% } %>
      * @return the ResponseEntity with status 200 (OK) and with body all users
-     * @throws URISyntaxException if the pagination headers couldn't be generated
      */
-    @RequestMapping(value = "/users",
-        method = RequestMethod.GET,
-        produces = MediaType.APPLICATION_JSON_VALUE)
-    @Timed<% if (databaseType == 'sql') { %>
-    @Transactional(readOnly = true)<% } %><% if (databaseType == 'sql' || databaseType == 'mongodb') { %>
-    public ResponseEntity<List<ManagedUserDTO>> getAllUsers(Pageable pageable)
-        throws URISyntaxException {
-        Page<User> page = userRepository.findAll(pageable);
-        List<ManagedUserDTO> managedUserDTOs = page.getContent().stream()
-            .map(ManagedUserDTO::new)
-            .collect(Collectors.toList());
+    @GetMapping("/users")
+    @Timed<% if (databaseType == 'sql' || databaseType == 'mongodb') { %>
+    public ResponseEntity<List<UserDTO>> getAllUsers(@ApiParam Pageable pageable) {
+        final Page<UserDTO> page = userService.getAllManagedUsers(pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, "/api/users");
-        return new ResponseEntity<>(managedUserDTOs, headers, HttpStatus.OK);
-    }<% } else { %>
-    public ResponseEntity<List<ManagedUserDTO>> getAllUsers()
-        throws URISyntaxException {
-        List<User> users = userRepository.findAll();
-        List<ManagedUserDTO> managedUserDTOs = users.stream()
-            .map(ManagedUserDTO::new)
-            .collect(Collectors.toList());
-        return new ResponseEntity<>(managedUserDTOs, HttpStatus.OK);
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
+
+    /**
+     * @return a string list of the all of the roles
+     */
+    @GetMapping("/users/authorities")
+    @Timed
+    @Secured(AuthoritiesConstants.ADMIN)
+    public List<String> getAuthorities() {
+        return userService.getAuthorities();
+    }<% } else { // Cassandra %>
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
+        final List<UserDTO> userDTOs = userService.getAllManagedUsers();
+        return new ResponseEntity<>(userDTOs, HttpStatus.OK);
     }<% } %>
 
     /**
@@ -216,31 +204,27 @@ public class UserResource {
      * @param login the login of the user to find
      * @return the ResponseEntity with status 200 (OK) and with body the "login" user, or with status 404 (Not Found)
      */
-    @RequestMapping(value = "/users/{login:" + Constants.LOGIN_REGEX + "}",
-        method = RequestMethod.GET,
-        produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping("/users/{login:" + Constants.LOGIN_REGEX + "}")
     @Timed
-    public ResponseEntity<ManagedUserDTO> getUser(@PathVariable String login) {
+    public ResponseEntity<UserDTO> getUser(@PathVariable String login) {
         log.debug("REST request to get User : {}", login);
-        return userService.getUserWithAuthoritiesByLogin(login)
-                .map(ManagedUserDTO::new)
-                .map(managedUserDTO -> new ResponseEntity<>(managedUserDTO, HttpStatus.OK))
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        return ResponseUtil.wrapOrNotFound(
+            userService.getUserWithAuthoritiesByLogin(login)
+                .map(UserDTO::new));
     }
+
     /**
-     * DELETE  USER :login : delete the "login" User.
+     * DELETE /users/:login : delete the "login" User.
      *
      * @param login the login of the user to delete
      * @return the ResponseEntity with status 200 (OK)
      */
-    @RequestMapping(value = "/users/{login:" + Constants.LOGIN_REGEX + "}",
-        method = RequestMethod.DELETE,
-        produces = MediaType.APPLICATION_JSON_VALUE)
+    @DeleteMapping("/users/{login:" + Constants.LOGIN_REGEX + "}")
     @Timed
     @Secured(AuthoritiesConstants.ADMIN)
     public ResponseEntity<Void> deleteUser(@PathVariable String login) {
         log.debug("REST request to delete User: {}", login);
-        userService.deleteUserInformation(login);
+        userService.deleteUser(login);
         return ResponseEntity.ok().headers(HeaderUtil.createAlert(<% if(enableTranslation) {%> "userManagement.deleted"<% } else { %> "A user is deleted with identifier " + login<% } %>, login)).build();
     }<% if (searchEngine == 'elasticsearch') { %>
 
@@ -251,9 +235,7 @@ public class UserResource {
      * @param query the query to search
      * @return the result of the search
      */
-    @RequestMapping(value = "/_search/users/{query}",
-        method = RequestMethod.GET,
-        produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping("/_search/users/{query}")
     @Timed
     public List<User> search(@PathVariable String query) {
         return StreamSupport

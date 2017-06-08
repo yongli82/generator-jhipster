@@ -1,3 +1,21 @@
+<%#
+ Copyright 2013-2017 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://jhipster.github.io/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
 {
     "global": {
         "title": "<%= capitalizedBaseName %>",
@@ -20,10 +38,10 @@
             },
             "admin": {
                 "main": "Administration",
-                <%_ if (applicationType == 'gateway') { _%>
+                <%_ if (applicationType === 'gateway') { _%>
                 "gateway": "Gateway",
                 <%_ } _%>
-                "userManagement": "Gestion utilisateur",
+                "userManagement": "Gestion des utilisateurs",
                 "tracker": "Suivi des utilisateurs",
                 "metrics": "Métriques",
                 "health": "Diagnostics",
@@ -48,28 +66,40 @@
         },
         "messages": {
             "info": {
+                <%_ if (clientFramework === 'angular1') { _%>
                 "authenticated": "Si vous voulez vous <a class=\"alert-link\" href=\"\" ng-click=\"vm.login()\">connecter</a>, vous pouvez utiliser les comptes par défaut : <br/> - Administrateur (nom d'utilisateur=\"admin\" et mot de passe =\"admin\") <br/> - Utilisateur (nom d'utilisateur=\"user\" et mot de passe =\"user\").",
                 "register": "Vous n'avez pas encore de compte ? <a class=\"alert-link\" href=\"\" ng-click=\"vm.register()\">Créer un compte</a>"
+                <%_ } else { _%>
+                "authenticated": {
+                    "prefix": "Si vous voulez vous ",
+                    "link": "connecter",
+                    "suffix": ", vous pouvez utiliser les comptes par défaut : <br/> - Administrateur (nom d'utilisateur=\"admin\" et mot de passe =\"admin\") <br/> - Utilisateur (nom d'utilisateur=\"user\" et mot de passe =\"user\")."
+                },
+                "register": {
+                    "noaccount": "Vous n'avez pas encore de compte ?",
+                    "link": "Créer un compte"
+                }
+                <%_ } _%>
             },
             "error": {
-                "dontmatch": "Le nouveau mot de passe et sa confirmation ne sont pas égaux!"
+                "dontmatch": "Le nouveau mot de passe et sa confirmation ne sont pas égaux !"
             },
             "validate": {
                 "newpassword": {
                     "required": "Votre mot de passe est requis.",
-                    "minlength": "Votre mot de passe doit comporter au moins 5 caractères",
-                    "maxlength": "Votre mot de passe ne doit pas comporter plus de 50 caractères",
-                    "strength": "Robustesse du mot de passe:"
+                    "minlength": "Votre mot de passe doit comporter au moins 5 caractères.",
+                    "maxlength": "Votre mot de passe ne doit pas comporter plus de 50 caractères.",
+                    "strength": "Robustesse du mot de passe :"
                 },
                 "confirmpassword": {
-                    "required": "Votre confirmation du mot de passe est requis.",
-                    "minlength": "Votre confirmation du mot de passe doit comporter au moins 5 caractères",
-                    "maxlength": "Votre confirmation du mot de passe ne doit pas comporter plus de 50 caractères"
+                    "required": "Votre confirmation du mot de passe est requise.",
+                    "minlength": "Votre confirmation du mot de passe doit comporter au moins 5 caractères.",
+                    "maxlength": "Votre confirmation du mot de passe ne doit pas comporter plus de 50 caractères."
                 },
                 "email": {
                     "required": "Votre email est requis.",
-                    "minlength": "Votre email doit comporter au moins 5 caractères",
-                    "maxlength": "Votre email ne doit pas comporter plus de 50 caractères",
+                    "minlength": "Votre email doit comporter au moins 5 caractères.",
+                    "maxlength": "Votre email ne doit pas comporter plus de 50 caractères.",
                     "invalid": "Votre email n'est pas valide."
                 }
             }
@@ -78,13 +108,14 @@
             "id": "ID"
         },
         "ribbon": {
-            "dev":"Development"
-        }
+            "dev":"Développement"
+        },
+        "item-count": "Affichage {{first}} - {{second}} de {{total}} items."
     },
     "entity": {
         "action": {
             "addblob": "Ajouter blob",
-            "addimage": "ajouter image",
+            "addimage": "Ajouter image",
             "back": "Retour",
             "cancel": "Annuler",
             "edit": "Editer",
@@ -101,26 +132,27 @@
             "title": "Confirmation de suppression"
         },
         "validation": {
-            "required": "Ce champs est obligatoire.",
-            "minlength": "Ce champs doit faire au minimum {{min}} caractères.",
-            "maxlength": "Ce champs doit faire moins de {{max}} caractères.",
-            "min": "Ce champs doit être inférieur à {{min}}.",
-            "max": "Ce champs doit être supérieur à {{max}}.",
-            "minbytes": "Ce champs doit être inférieur à {{min}} bytes.",
-            "maxbytes": "Ce champs doit être supérieur à {{max}} bytes.",
-            "pattern": "Ce champs doit suivre l'expression régulière {{pattern}}.",
-            "number": "Ce champs doit être un nombre.",
-            "datetimelocal": "Ce champs doit être une date et une heure."
+            "required": "Ce champ est obligatoire.",
+            "minlength": "Ce champ doit faire au minimum {{min}} caractères.",
+            "maxlength": "Ce champ doit faire moins de {{max}} caractères.",
+            "min": "Ce champ doit être supérieur à {{min}}.",
+            "max": "Ce champ doit être inférieur à {{max}}.",
+            "minbytes": "Ce champ doit être supérieur à {{min}} bytes.",
+            "maxbytes": "Ce champ doit être inférieur à {{max}} bytes.",
+            "pattern": "Ce champ doit suivre l'expression régulière {{pattern}}.",
+            "number": "Ce champ doit être un nombre.",
+            "datetimelocal": "Ce champ doit être une date et une heure."
         }
     },
     "error": {
-        "server.not.reachable": "Server not reachable",
-        "url.not.found": "Not found",
-        "NotNull": "Field {{fieldName}} cannot be empty!",
-        "Size": "Field {{fieldName}} does not meet min/max size requirements!",
-        "userexists": "Login name already used!",
-        "emailexists": "E-mail is already in use!",
-        "idexists": "A new {{entityName}} cannot already have an ID"
+        "internalServerError": "Erreur interne du serveur",
+        "server.not.reachable": "Serveur inaccessible",
+        "url.not.found": "Non trouvé",
+        "NotNull": "Le champ {{fieldName}} ne peut pas être vide !",
+        "Size": "Le champ {{fieldName}} ne respecte pas les critères minimum et maximum !",
+        "userexists": "Login déjà utilisé !",
+        "emailexists": "Email déjà utilisé !",
+        "idexists": "Une nouvelle entité {{entityName}} ne peut pas avoir d'ID !"
     },
     "footer": "Ceci est votre pied de page"
 }

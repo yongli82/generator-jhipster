@@ -1,7 +1,27 @@
+<%#
+ Copyright 2013-2017 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://jhipster.github.io/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
 package <%=packageName%>.config;
 
+import io.github.jhipster.config.JHipsterProperties;
 <%_ if (applicationType == 'microservice' || applicationType == 'gateway') { _%>
-import <%=packageName%>.config.metrics.SpectatorLogMetricWriter;
+import io.github.jhipster.config.metrics.SpectatorLogMetricWriter;
+
 import com.netflix.spectator.api.Registry;
 import org.springframework.boot.actuate.autoconfigure.ExportMetricReader;
 import org.springframework.boot.actuate.autoconfigure.ExportMetricWriter;
@@ -13,22 +33,25 @@ import org.springframework.cloud.netflix.metrics.spectator.SpectatorMetricReader
 import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Slf4jReporter;
-import com.codahale.metrics.graphite.Graphite;
-import com.codahale.metrics.graphite.GraphiteReporter;
 import com.codahale.metrics.health.HealthCheckRegistry;
+<%_ if (hibernateCache == 'ehcache') { _%>
+import com.codahale.metrics.jcache.JCacheGaugeSet;
+<%_ } _%>
 import com.codahale.metrics.jvm.*;
 import com.ryantenney.metrics.spring.config.annotation.EnableMetrics;
 import com.ryantenney.metrics.spring.config.annotation.MetricsConfigurerAdapter;
-import fr.ippon.spark.metrics.SparkReporter;
+<%_ if (databaseType == 'sql') { _%>
+import com.zaxxer.hikari.HikariDataSource;
+<%_ } _%>
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+<%_ if (databaseType == 'sql') { _%>
+import org.springframework.beans.factory.annotation.Autowired;
+<%_ } _%>
 import org.springframework.context.annotation.*;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Inject;
 import java.lang.management.ManagementFactory;
-import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
@@ -40,15 +63,31 @@ public class MetricsConfiguration extends MetricsConfigurerAdapter {
     private static final String PROP_METRIC_REG_JVM_THREADS = "jvm.threads";
     private static final String PROP_METRIC_REG_JVM_FILES = "jvm.files";
     private static final String PROP_METRIC_REG_JVM_BUFFERS = "jvm.buffers";
-
+<% if (hibernateCache == 'ehcache') { %>
+    private static final String PROP_METRIC_REG_JCACHE_STATISTICS = "jcache.statistics";
+<%_ } _%>
     private final Logger log = LoggerFactory.getLogger(MetricsConfiguration.class);
 
     private MetricRegistry metricRegistry = new MetricRegistry();
 
     private HealthCheckRegistry healthCheckRegistry = new HealthCheckRegistry();
 
-    @Inject
-    private JHipsterProperties jHipsterProperties;
+    private final JHipsterProperties jHipsterProperties;
+<%_ if (databaseType == 'sql') { _%>
+
+    private HikariDataSource hikariDataSource;
+<%_ } _%>
+
+    public MetricsConfiguration(JHipsterProperties jHipsterProperties) {
+        this.jHipsterProperties = jHipsterProperties;
+    }
+<%_ if (databaseType == 'sql') { _%>
+
+    @Autowired(required = false)
+    public void setHikariDataSource(HikariDataSource hikariDataSource) {
+        this.hikariDataSource = hikariDataSource;
+    }
+<%_ } _%>
 
     @Override
     @Bean
@@ -70,12 +109,20 @@ public class MetricsConfiguration extends MetricsConfigurerAdapter {
         metricRegistry.register(PROP_METRIC_REG_JVM_THREADS, new ThreadStatesGaugeSet());
         metricRegistry.register(PROP_METRIC_REG_JVM_FILES, new FileDescriptorRatioGauge());
         metricRegistry.register(PROP_METRIC_REG_JVM_BUFFERS, new BufferPoolMetricSet(ManagementFactory.getPlatformMBeanServer()));
+<% if (hibernateCache == 'ehcache') { %>
+        metricRegistry.register(PROP_METRIC_REG_JCACHE_STATISTICS, new JCacheGaugeSet());
+<%_ } _%>
+        <%_ if (databaseType == 'sql') { _%>
+        if (hikariDataSource != null) {
+            log.debug("Monitoring the datasource");
+            hikariDataSource.setMetricRegistry(metricRegistry);
+        }
+        <%_ } _%>
         if (jHipsterProperties.getMetrics().getJmx().isEnabled()) {
             log.debug("Initializing Metrics JMX reporting");
             JmxReporter jmxReporter = JmxReporter.forRegistry(metricRegistry).build();
             jmxReporter.start();
         }
-
         if (jHipsterProperties.getMetrics().getLogs().isEnabled()) {
             log.info("Initializing Metrics Log reporting");
             final Slf4jReporter reporter = Slf4jReporter.forRegistry(metricRegistry)
@@ -86,65 +133,8 @@ public class MetricsConfiguration extends MetricsConfigurerAdapter {
             reporter.start(jHipsterProperties.getMetrics().getLogs().getReportFrequency(), TimeUnit.SECONDS);
         }
     }
-
-    @Configuration
-    @ConditionalOnClass(Graphite.class)
-    public static class GraphiteRegistry {
-
-        private final Logger log = LoggerFactory.getLogger(GraphiteRegistry.class);
-
-        @Inject
-        private MetricRegistry metricRegistry;
-
-        @Inject
-        private JHipsterProperties jHipsterProperties;
-
-        @PostConstruct
-        private void init() {
-            if (jHipsterProperties.getMetrics().getGraphite().isEnabled()) {
-                log.info("Initializing Metrics Graphite reporting");
-                String graphiteHost = jHipsterProperties.getMetrics().getGraphite().getHost();
-                Integer graphitePort = jHipsterProperties.getMetrics().getGraphite().getPort();
-                String graphitePrefix = jHipsterProperties.getMetrics().getGraphite().getPrefix();
-                Graphite graphite = new Graphite(new InetSocketAddress(graphiteHost, graphitePort));
-                GraphiteReporter graphiteReporter = GraphiteReporter.forRegistry(metricRegistry)
-                    .convertRatesTo(TimeUnit.SECONDS)
-                    .convertDurationsTo(TimeUnit.MILLISECONDS)
-                    .prefixedWith(graphitePrefix)
-                    .build(graphite);
-                graphiteReporter.start(1, TimeUnit.MINUTES);
-            }
-        }
-    }
-
-    @Configuration
-    @ConditionalOnClass(SparkReporter.class)
-    public static class SparkRegistry {
-
-        private final Logger log = LoggerFactory.getLogger(SparkRegistry.class);
-
-        @Inject
-        private MetricRegistry metricRegistry;
-
-        @Inject
-        private JHipsterProperties jHipsterProperties;
-
-        @PostConstruct
-        private void init() {
-            if (jHipsterProperties.getMetrics().getSpark().isEnabled()) {
-                log.info("Initializing Metrics Spark reporting");
-                String sparkHost = jHipsterProperties.getMetrics().getSpark().getHost();
-                Integer sparkPort = jHipsterProperties.getMetrics().getSpark().getPort();
-                SparkReporter sparkReporter = SparkReporter.forRegistry(metricRegistry)
-                    .convertRatesTo(TimeUnit.SECONDS)
-                    .convertDurationsTo(TimeUnit.MILLISECONDS)
-                    .build(sparkHost, sparkPort);
-                sparkReporter.start(1, TimeUnit.MINUTES);
-            }
-        }
-    }
-
     <%_ if (applicationType == 'microservice' || applicationType == 'gateway') { _%>
+
     /* Spectator metrics log reporting */
     @Bean
     @ConditionalOnProperty("jhipster.logging.spectator-metrics.enabled")

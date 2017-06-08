@@ -1,20 +1,42 @@
+<%#
+ Copyright 2013-2017 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://jhipster.github.io/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
 package <%=packageName%>.domain;
 
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
-<% if (databaseType == 'mongodb') { %>
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
+<%_ if (databaseType == 'mongodb') { _%>
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-<% } %><% if (databaseType == 'sql') { %>
-import javax.persistence.*;<% } %>
+<%_ } _%>
+<%_ if (hibernateCache != 'no') { _%>
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+<%_ } _%>
+<%_ if (databaseType == 'sql') { _%>
+
+import javax.persistence.*;
+<%_ } _%>
 import javax.validation.constraints.NotNull;
-<% if (databaseType == 'mongodb') { -%>
+<%_ if (databaseType == 'mongodb') { _%>
 import javax.validation.constraints.Size;
-<% } -%>
+<%_ } _%>
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -22,15 +44,23 @@ import java.util.Objects;
  * A Social user.
  */<% if (databaseType == 'sql') { %>
 @Entity
-@Table(name = "jhi_social_user_connection")
-@Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)<% } %><% if (databaseType == 'mongodb') { %>
-@Document(collection = "jhi_social_user_connection")<% } %>
+@Table(name = "jhi_social_user_connection")<% if (hibernateCache != 'no') { %>
+@Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)<% } %><% } %><% if (databaseType == 'mongodb') { %>
+@Document(collection = "jhi_social_user_connection")
+@CompoundIndexes(
+    @CompoundIndex(name = "user2-prov-provusr-idx", unique = true, def = "{'user_id': 1, 'provider_id': 1, 'provider_user_id': 1}")
+)<% } %>
 public class SocialUserConnection implements Serializable {
 
     private static final long serialVersionUID = 1L;
 <% if (databaseType == 'sql') { %>
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    <%_ if (prodDatabaseType == 'mysql' || prodDatabaseType == 'mariadb') { _%>
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    <%_ }  else { _%>
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
+    @SequenceGenerator(name = "sequenceGenerator")
+    <%_ } _%>
     private Long id;<% } %><% if (databaseType == 'mongodb') { %>
     @Id
     private String id;<% } %>

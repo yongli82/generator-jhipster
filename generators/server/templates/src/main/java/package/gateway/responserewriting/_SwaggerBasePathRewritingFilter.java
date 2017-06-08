@@ -1,15 +1,36 @@
+<%#
+ Copyright 2013-2017 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://jhipster.github.io/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
 package <%=packageName%>.gateway.responserewriting;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.io.CharStreams;
 import com.netflix.zuul.context.RequestContext;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.netflix.zuul.filters.post.SendResponseFilter;
 import springfox.documentation.swagger2.web.Swagger2Controller;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
+import java.util.zip.GZIPInputStream;
 
 /**
  * Zuul filter to rewrite micro-services Swagger URL Base Path.
@@ -41,7 +62,10 @@ public class SwaggerBasePathRewritingFilter extends SendResponseFilter {
     @Override
     public Object run() {
         RequestContext context = RequestContext.getCurrentContext();
-        context.getResponse().setCharacterEncoding("UTF-8");
+
+        if (!context.getResponseGZipped()) {
+            context.getResponse().setCharacterEncoding("UTF-8");
+        }
 
         String rewrittenResponse = rewriteBasePath(context);
         context.setResponseBody(rewrittenResponse);
@@ -52,7 +76,10 @@ public class SwaggerBasePathRewritingFilter extends SendResponseFilter {
         InputStream responseDataStream = context.getResponseDataStream();
         String requestUri = RequestContext.getCurrentContext().getRequest().getRequestURI();
         try {
-            String response = CharStreams.toString(new InputStreamReader(responseDataStream));
+            if (context.getResponseGZipped()) {
+                responseDataStream = new GZIPInputStream(context.getResponseDataStream());
+            }
+            String response = IOUtils.toString(responseDataStream, StandardCharsets.UTF_8);
             if (response != null) {
                 LinkedHashMap<String, Object> map = this.mapper.readValue(response, LinkedHashMap.class);
 
@@ -61,8 +88,7 @@ public class SwaggerBasePathRewritingFilter extends SendResponseFilter {
                 log.debug("Swagger-docs: rewritten Base URL with correct micro-service route: {}", basePath);
                 return mapper.writeValueAsString(map);
             }
-        }
-        catch (IOException e){
+        } catch (IOException e) {
             log.error("Swagger-docs filter error", e);
         }
         return null;
