@@ -81,6 +81,9 @@ module.exports = JDLGenerator.extend({
                 });
                 this.log('Writing entity JSON files.');
                 jhiCore.exportToJSON(entities, this.options.force);
+                this.entityNames = Object.keys(entities);
+                this.log("Entity Names:");
+                this.log(this.entityNames);
             } catch (e) {
                 this.log(e);
                 this.error('\nError while parsing entities from JDL\n');
@@ -91,15 +94,19 @@ module.exports = JDLGenerator.extend({
             this.log('Generating entities.');
             try {
                 this.getExistingEntities().forEach((entity) => {
-                    this.composeWith(require.resolve('../entity'), {
-                        regenerate: true,
-                        'skip-install': true,
-                        'skip-client': entity.definition.skipClient,
-                        'skip-server': entity.definition.skipServer,
-                        'no-fluent-methods': entity.definition.noFluentMethod,
-                        'skip-user-management': entity.definition.skipUserManagement,
-                        arguments: [entity.name],
-                    });
+                    let regenarate = this.entityNames.indexOf(entity.name) > -1;
+                    this.log("generate entity [" + entity.name + "], regenarate=" + regenarate);
+                    if(regenarate){
+                        this.composeWith(require.resolve('../entity'), {
+                            regenerate: regenarate,
+                            'skip-install': true,
+                            'skip-client': entity.definition.skipClient,
+                            'skip-server': entity.definition.skipServer,
+                            'no-fluent-methods': entity.definition.noFluentMethod,
+                            'skip-user-management': entity.definition.skipUserManagement,
+                            arguments: [entity.name],
+                        });
+                    }
                 });
             } catch (e) {
                 this.error(`Error while generating entities from parsed JDL\n${e}`);

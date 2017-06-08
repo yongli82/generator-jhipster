@@ -62,6 +62,7 @@
             const fieldType = fields[idx].fieldType;
             const fieldTypeBlobContent = fields[idx].fieldTypeBlobContent;
             const columnName = fields[idx].fieldNameAsDatabaseColumn;
+            const remarks = formatAsApiDescription(fields[idx].javadoc);
             let columnType;
             if (fieldType == 'String' || fields[idx].fieldIsEnum) {
                 columnType="varchar(" + maxlength + ")";
@@ -97,11 +98,11 @@
                 }
             }
             %>
-            <column name="<%=columnName %>" type="<%=columnType %>">
+            <column name="<%=columnName %>" type="<%=columnType %>" remarks="<%=remarks %>">
                 <constraints nullable="<%= nullable %>" />
             </column>
             <%_ if (fieldType === 'byte[]' && fieldTypeBlobContent !== 'text') { _%>
-            <column name="<%=columnName %>_content_type" type="varchar(255)">
+            <column name="<%=columnName %>_content_type" type="varchar(255)" remarks="<%=remarks %>">
                 <constraints nullable="<%= nullable %>" />
             </column>
             <%_ }  _%>
@@ -113,13 +114,27 @@
                     nullable_relation = false;
                 }
                 if (relationships[idx].relationshipType === 'many-to-one') { %>
-            <column name="<%=getColumnName(relationshipName) %>_id" type="bigint">
+            <column name="<%=getColumnName(relationshipName) %>_id" type="bigint" >
                 <constraints nullable="<%= nullable_relation %>" />
             </column>
             <%_ } else if (relationshipType === 'one-to-one' && relationships[idx].ownerSide === true) { _%>
-            <column name="<%=getColumnName(relationshipName) %>_id" type="bigint">
+            <column name="<%=getColumnName(relationshipName) %>_id" type="bigint" >
                 <constraints unique="true" nullable="<%= nullable_relation %>" />
             </column><% } %><% } %>
+
+            <column name="created_by" type="varchar(50)" >
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_date" type="timestamp" defaultValueDate="${now}" >
+                <constraints nullable="true"/>
+            </column>
+
+            <column name="last_modified_by" type="varchar(50)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="last_modified_date" type="timestamp" defaultValueDate="${now}">
+                <constraints nullable="true"/>
+            </column>
             <!-- jhipster-needle-liquibase-add-column - JHipster will add columns here, do not remove-->
         </createTable>
         <%_ for (const idx in fields) {
