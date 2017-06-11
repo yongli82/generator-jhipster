@@ -62,7 +62,7 @@
             const fieldType = fields[idx].fieldType;
             const fieldTypeBlobContent = fields[idx].fieldTypeBlobContent;
             const columnName = fields[idx].fieldNameAsDatabaseColumn;
-            const remarks = formatAsApiDescription(fields[idx].javadoc);
+            const remarks = fields[idx].javadoc || "";
             let columnType;
             if (fieldType == 'String' || fields[idx].fieldIsEnum) {
                 columnType="varchar(" + maxlength + ")";

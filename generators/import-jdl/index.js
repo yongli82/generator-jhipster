@@ -95,8 +95,9 @@ module.exports = JDLGenerator.extend({
             try {
                 this.getExistingEntities().forEach((entity) => {
                     let regenarate = this.entityNames.indexOf(entity.name) > -1;
-                    this.log("generate entity [" + entity.name + "], regenarate=" + regenarate);
                     if(regenarate){
+                        this.log("generate entity [" + entity.name + "], regenarate=" + regenarate);
+                        //this.log(entity);
                         this.composeWith(require.resolve('../entity'), {
                             regenerate: regenarate,
                             'skip-install': true,
