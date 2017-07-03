@@ -122,17 +122,17 @@
                 <constraints unique="true" nullable="<%= nullable_relation %>" />
             </column><% } %><% } %>
 
-            <column name="created_by" type="varchar(50)" >
+            <column name="created_by" type="varchar(50)" remarks="创建者">
                 <constraints nullable="true"/>
             </column>
-            <column name="created_date" type="timestamp" defaultValueDate="${now}" >
+            <column name="created_date" type="timestamp" defaultValueDate="${now}" remarks="创建时间">
                 <constraints nullable="true"/>
             </column>
 
-            <column name="last_modified_by" type="varchar(50)">
+            <column name="last_modified_by" type="varchar(50)" remarks="更新者">
                 <constraints nullable="true"/>
             </column>
-            <column name="last_modified_date" type="timestamp" defaultValueDate="${now}">
+            <column name="last_modified_date" type="timestamp" defaultValueDate="${now}" remarks="更新时间">
                 <constraints nullable="true"/>
             </column>
             <!-- jhipster-needle-liquibase-add-column - JHipster will add columns here, do not remove-->
